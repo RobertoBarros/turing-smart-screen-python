@@ -58,6 +58,7 @@ Or the troubleshooting page: https://github.com/mathoudebine/turing-smart-screen
 from library.sensors.sensors_python import sensors_fans, is_cpu_fan
 
 TURING_MODEL = "Turing Smart Screen"
+TURING_USBMAC_MODEL = "Turing Smart Screen (macOS USB)"
 USBPCMONITOR_MODEL = "UsbPCMonitor"
 XUANFANG_MODEL = "XuanFang rev. B & flagship"
 KIPYE_MODEL = "Kipye Qiye Smart Display"
@@ -98,6 +99,7 @@ size_list = (
 # This map is used to select the correct smart screen model based on config.yaml "REVISION" and selected "THEME" size
 revision_and_size_to_model_map = {
     ('A', SIZE_3_5_INCH): TURING_MODEL,  # Can also be UsbPCMonitor 3.5, does not matter since protocol is the same
+    ('A_USBMAC', SIZE_3_5_INCH): TURING_USBMAC_MODEL,
     ('A', SIZE_5_INCH): USBPCMONITOR_MODEL,
     ('B', SIZE_3_5_INCH): XUANFANG_MODEL,
     ('C', SIZE_2_x_INCH): TURING_MODEL,
@@ -128,6 +130,7 @@ model_and_size_to_revision_map = {
     (KIPYE_MODEL, SIZE_3_5_INCH): 'D',
     (TURING_MODEL, SIZE_2_x_INCH): 'C',
     (TURING_MODEL, SIZE_3_5_INCH): 'A',
+    (TURING_USBMAC_MODEL, SIZE_3_5_INCH): 'A_USBMAC',
     (TURING_MODEL, SIZE_4_6_INCH): 'TUR_USB',
     (TURING_MODEL, SIZE_5_2_INCH): 'TUR_USB',
     (TURING_MODEL, SIZE_5_INCH): 'C',
@@ -667,7 +670,7 @@ class TuringConfigWindow:
                 self.cpu_fan_cb.place_forget()
 
     def show_hide_brightness_warning(self, e=None):
-        if int(self.brightness_slider.get()) > 50 and self.model_cb.get() == TURING_MODEL and self.size_cb.get() == SIZE_3_5_INCH:
+        if int(self.brightness_slider.get()) > 50 and self.model_cb.get() in (TURING_MODEL, TURING_USBMAC_MODEL) and self.size_cb.get() == SIZE_3_5_INCH:
             # Show warning for Turing Smart screen 3.5 with high brightness
             self.brightness_warning_label.place(x=370, y=225)
         else:

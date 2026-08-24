@@ -32,6 +32,7 @@ from datetime import datetime
 
 # Import only the modules for LCD communication
 from library.lcd.lcd_comm_rev_a import LcdCommRevA, Orientation
+from library.lcd.lcd_comm_rev_a_usbmac import LcdCommRevAUsbMac
 from library.lcd.lcd_comm_rev_b import LcdCommRevB
 from library.lcd.lcd_comm_rev_c import LcdCommRevC
 from library.lcd.lcd_comm_rev_d import LcdCommRevD
@@ -49,7 +50,7 @@ COM_PORT = "AUTO"
 
 # Display revision: see config.yaml comments for values
 # To identify your smart screen: https://github.com/mathoudebine/turing-smart-screen-python/wiki/Hardware-revisions
-REVISION = "A"
+REVISION = "A_USBMAC"
 
 # Display width & height in pixels for portrait orientation
 # /!\ Do not switch width/height here for landscape, use lcd_comm.SetOrientation below
@@ -78,6 +79,9 @@ if __name__ == "__main__":
     if REVISION == "A":
         logger.info("Selected Hardware Revision A (Turing Smart Screen 3.5\" & UsbPCMonitor 3.5\"/5\")")
         lcd_comm = LcdCommRevA(com_port=COM_PORT, display_width=WIDTH, display_height=HEIGHT)
+    elif REVISION == "A_USBMAC":
+        logger.info("Selected Hardware Revision A (macOS USB bulk)")
+        lcd_comm = LcdCommRevAUsbMac(com_port=COM_PORT, display_width=WIDTH, display_height=HEIGHT)
     elif REVISION == "B":
         logger.info("Selected Hardware Revision B (XuanFang screen 3.5\" version B / flagship)")
         lcd_comm = LcdCommRevB(com_port=COM_PORT, display_width=WIDTH, display_height=HEIGHT)

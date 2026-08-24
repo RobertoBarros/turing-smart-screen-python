@@ -21,6 +21,7 @@
 from library import config
 from library.lcd.lcd_comm import Orientation
 from library.lcd.lcd_comm_rev_a import LcdCommRevA
+from library.lcd.lcd_comm_rev_a_usbmac import LcdCommRevAUsbMac
 from library.lcd.lcd_comm_rev_b import LcdCommRevB
 from library.lcd.lcd_comm_rev_c import LcdCommRevC
 from library.lcd.lcd_comm_turing_usb import LcdCommTuringUSB
@@ -91,6 +92,9 @@ class Display:
         if config.CONFIG_DATA["display"]["REVISION"] == "A":
             self.lcd = LcdCommRevA(com_port=config.CONFIG_DATA['config']['COM_PORT'],
                                    update_queue=config.update_queue)
+        elif config.CONFIG_DATA["display"]["REVISION"] == "A_USBMAC":
+            self.lcd = LcdCommRevAUsbMac(com_port=config.CONFIG_DATA['config']['COM_PORT'],
+                                         update_queue=config.update_queue)
         elif config.CONFIG_DATA["display"]["REVISION"] == "B":
             self.lcd = LcdCommRevB(com_port=config.CONFIG_DATA['config']['COM_PORT'],
                                    update_queue=config.update_queue)

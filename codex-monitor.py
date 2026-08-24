@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 
 import psutil
+from PIL import Image, ImageDraw, ImageFont
 
 from library.lcd.lcd_comm_rev_a_usbmac import LcdCommRevAUsbMac
 
@@ -13,6 +14,9 @@ REFRESH_INTERVAL_SECONDS = 2
 PAGE_INTERVAL_SECONDS = 4
 ROWS_PER_PAGE = 4
 STATE_PATH = Path("/tmp/codex-monitor-state.json")
+FONT_PATH = "res/fonts/roboto/Roboto-Medium.ttf"
+BOLD_FONT_PATH = "res/fonts/roboto/Roboto-Bold.ttf"
+BACKGROUND_COLOR = (11, 15, 20)
 
 STATUS_LABELS = {
     "working": "TRABALHANDO",
@@ -26,6 +30,13 @@ STATUS_PRIORITY = {
     "waiting_answer": 1,
     "completed": 2,
     "working": 3,
+}
+
+STATUS_COLORS = {
+    "working": ((9, 45, 72), (74, 222, 255)),
+    "completed": ((9, 58, 38), (74, 222, 128)),
+    "waiting_answer": ((69, 43, 0), (255, 196, 61)),
+    "waiting_approval": ((71, 20, 27), (255, 99, 112)),
 }
 
 
@@ -96,36 +107,79 @@ def display_entries(instances, session_states):
     )
 
 
-def truncate(value, maximum_length=15):
+def truncate(value, maximum_length=28):
     if len(value) <= maximum_length:
         return value
 
     return f"{value[:maximum_length - 1]}…"
 
 
-def display_text(entries, page):
+def render_dashboard(width, height, entries, page):
+    image = Image.new("RGB", (width, height), BACKGROUND_COLOR)
+    draw = ImageDraw.Draw(image)
+    title_font = ImageFont.truetype(BOLD_FONT_PATH, 18)
+    project_font = ImageFont.truetype(FONT_PATH, 18)
+    status_font = ImageFont.truetype(BOLD_FONT_PATH, 17)
+
+    draw.text((14, 14), "CODEX CLI", font=title_font, fill=(255, 255, 255))
+
     if not entries:
-        return "CODEX CLI\n\nNENHUMA INSTÂNCIA"
+        draw.text(
+            (14, 64),
+            "NENHUMA INSTÂNCIA",
+            font=project_font,
+            fill=(139, 152, 165),
+        )
+        return image
 
     page_count = (len(entries) + ROWS_PER_PAGE - 1) // ROWS_PER_PAGE
     start = page * ROWS_PER_PAGE
-    lines = ["CODEX CLI"]
 
     if page_count > 1:
-        lines.append(f"PÁGINA {page + 1}/{page_count}")
+        page_text = f"{page + 1}/{page_count}"
+        page_box = draw.textbbox((0, 0), page_text, font=status_font)
+        draw.text(
+            (width - 14 - (page_box[2] - page_box[0]), 17),
+            page_text,
+            font=status_font,
+            fill=(139, 152, 165),
+        )
 
-    for entry in entries[start:start + ROWS_PER_PAGE]:
-        identifier = f"{entry['terminal']} · {truncate(entry['project'])}"
-        lines.extend(("", identifier, STATUS_LABELS[entry["status"]]))
+    card_gap = 8
+    card_x = 10
+    card_y = 50
+    card_width = width - 20
+    card_height = (height - card_y - 10 - card_gap * (ROWS_PER_PAGE - 1)) // ROWS_PER_PAGE
 
-    return "\n".join(lines)
+    for index, entry in enumerate(entries[start:start + ROWS_PER_PAGE]):
+        y = card_y + index * (card_height + card_gap)
+        background_color, text_color = STATUS_COLORS[entry["status"]]
+        draw.rounded_rectangle(
+            (card_x, y, card_x + card_width, y + card_height),
+            radius=12,
+            fill=background_color,
+        )
+        draw.text(
+            (card_x + 14, y + 16),
+            truncate(entry["project"]),
+            font=project_font,
+            fill=(255, 255, 255),
+        )
+        draw.text(
+            (card_x + 14, y + 50),
+            STATUS_LABELS[entry["status"]],
+            font=status_font,
+            fill=text_color,
+        )
+
+    return image
 
 
 def main():
     lcd = LcdCommRevAUsbMac()
     lcd.InitializeComm()
     lcd.Clear()
-    previous_text = None
+    previous_state = None
 
     try:
         while True:
@@ -135,20 +189,18 @@ def main():
             )
             page_count = max(1, (len(entries) + ROWS_PER_PAGE - 1) // ROWS_PER_PAGE)
             page = int(time.monotonic() / PAGE_INTERVAL_SECONDS) % page_count
-            text = display_text(entries, page)
+            display_state = (entries, page)
 
-            if text != previous_text:
-                lcd.DisplayText(
-                    text,
-                    width=lcd.get_width(),
-                    height=lcd.get_height(),
-                    font_size=20,
-                    font_color=(255, 255, 255),
-                    background_color=(0, 0, 0),
-                    align="center",
-                    anchor="mm",
+            if display_state != previous_state:
+                lcd.DisplayPILImage(
+                    render_dashboard(
+                        lcd.get_width(),
+                        lcd.get_height(),
+                        entries,
+                        page,
+                    )
                 )
-                previous_text = text
+                previous_state = display_state
 
             time.sleep(REFRESH_INTERVAL_SECONDS)
     except KeyboardInterrupt:

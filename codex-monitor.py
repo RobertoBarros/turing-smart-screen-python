@@ -25,13 +25,6 @@ STATUS_LABELS = {
     "waiting_approval": "AGUARDA APROVAÇÃO",
 }
 
-STATUS_PRIORITY = {
-    "waiting_approval": 0,
-    "waiting_answer": 1,
-    "completed": 2,
-    "working": 3,
-}
-
 STATUS_COLORS = {
     "working": ((9, 45, 72), (74, 222, 255)),
     "completed": ((9, 58, 38), (74, 222, 128)),
@@ -98,13 +91,7 @@ def display_entries(instances, session_states):
             }
         )
 
-    return sorted(
-        entries,
-        key=lambda entry: (
-            STATUS_PRIORITY.get(entry["status"], 99),
-            entry["terminal"],
-        ),
-    )
+    return sorted(entries, key=lambda entry: entry["project"].casefold())
 
 
 def truncate(value, maximum_length=28):
